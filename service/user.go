@@ -1,10 +1,11 @@
 package service
 
 import (
-	"github.com/qingconglaixueit/wechatbot/config"
+	"time"
+
 	"github.com/eatmoreapple/openwechat"
 	"github.com/patrickmn/go-cache"
-	"time"
+	"github.com/ylsislove/wechatbot/config"
 )
 
 // UserServiceInterface 用户业务接口
@@ -47,7 +48,7 @@ func (s *UserService) GetUserSessionContext() string {
 
 	// 2.如果字符长度超过等于4000，强制清空会话（超过GPT会报错）。
 	contextText := sessionContext.(string)
-	if len(contextText) >= 4000 {
+	if len(contextText) >= int(config.LoadConfig().MaxTokens) {
 		s.cache.Delete(s.user.ID())
 	}
 

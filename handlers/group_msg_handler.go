@@ -1,13 +1,14 @@
 package handlers
 
 import (
-	"errors"
 	"fmt"
-	"github.com/eatmoreapple/openwechat"
-	"github.com/qingconglaixueit/wechatbot/gpt"
-	"github.com/qingconglaixueit/wechatbot/pkg/logger"
-	"github.com/qingconglaixueit/wechatbot/service"
 	"strings"
+
+	"github.com/eatmoreapple/openwechat"
+	"github.com/ylsislove/wechatbot/config"
+	"github.com/ylsislove/wechatbot/gpt"
+	"github.com/ylsislove/wechatbot/pkg/logger"
+	"github.com/ylsislove/wechatbot/service"
 )
 
 var _ MessageHandlerInterface = (*GroupMessageHandler)(nil)
@@ -58,7 +59,7 @@ func NewGroupMessageHandler(msg *openwechat.Message) (MessageHandlerInterface, e
 
 	userService := service.NewUserService(c, groupSender)
 	handler := &GroupMessageHandler{
-		self:    sender.Self,
+		self:    sender.Self(),
 		msg:     msg,
 		group:   group,
 		sender:  groupSender,
@@ -97,13 +98,18 @@ func (g *GroupMessageHandler) ReplyText() error {
 	}
 
 	// 3.请求GPT获取回复
-	reply, err = gpt.Completions(requestText)
+	if config.LoadConfig().Model == "gpt-3.5-turbo" || config.LoadConfig().Model == "gpt-3.5-turbo-0301" {
+		reply, err = gpt.ChatCompletions(requestText)
+	} else {
+		reply, err = gpt.Completions(requestText)
+	}
 	if err != nil {
-		// 2.1 将GPT请求失败信息输出给用户，省得整天来问又不知道日志在哪里。
-		errMsg := fmt.Sprintf("gpt request error: %v", err)
-		_, err = g.msg.ReplyText(errMsg)
+		// 2.1 将GPT请求失败信息输出给用户
+		// errMsg := fmt.Sprintf("gpt request error: %v", err)
+		// _, err = g.msg.ReplyText(errMsg)
+		_, err = g.msg.ReplyText("我的大脑被神秘力量攻击了＞﹏＜，请联系管理员进行修复")
 		if err != nil {
-			return errors.New(fmt.Sprintf("response group error: %v ", err))
+			return fmt.Errorf("response group error: %v ", err)
 		}
 		return err
 	}
@@ -112,7 +118,7 @@ func (g *GroupMessageHandler) ReplyText() error {
 	g.service.SetUserSessionContext(requestText, reply)
 	_, err = g.msg.ReplyText(g.buildReplyText(reply))
 	if err != nil {
-		return errors.New(fmt.Sprintf("response user error: %v ", err))
+		return fmt.Errorf("response user error: %v ", err)
 	}
 
 	// 5.返回错误信息
@@ -123,11 +129,11 @@ func (g *GroupMessageHandler) ReplyText() error {
 func (g *GroupMessageHandler) getRequestText() string {
 	// 1.去除空格以及换行
 	requestText := strings.TrimSpace(g.msg.Content)
-	requestText = strings.Trim(g.msg.Content, "\n")
+	requestText = strings.Trim(requestText, "\n")
 
 	// 2.替换掉当前用户名称
 	replaceText := "@" + g.self.NickName
-	requestText = strings.TrimSpace(strings.ReplaceAll(g.msg.Content, replaceText, ""))
+	requestText = strings.TrimSpace(strings.ReplaceAll(requestText, replaceText, ""))
 	if requestText == "" {
 		return ""
 	}
@@ -137,15 +143,15 @@ func (g *GroupMessageHandler) getRequestText() string {
 	if sessionText != "" {
 		requestText = sessionText + "\n" + requestText
 	}
-	if len(requestText) >= 4000 {
-		requestText = requestText[:4000]
+	if len(requestText) >= int(config.LoadConfig().MaxTokens) {
+		requestText = requestText[:int(config.LoadConfig().MaxTokens)]
 	}
 
 	// 4.检查用户发送文本是否包含结束标点符号
 	punctuation := ",.;!?，。！？、…"
 	runeRequestText := []rune(requestText)
 	lastChar := string(runeRequestText[len(runeRequestText)-1:])
-	if strings.Index(punctuation, lastChar) < 0 {
+	if !strings.Contains(punctuation, lastChar) {
 		requestText = requestText + "？" // 判断最后字符是否加了标点，没有的话加上句号，避免openai自动补齐引起混乱。
 	}
 
@@ -157,21 +163,24 @@ func (g *GroupMessageHandler) getRequestText() string {
 func (g *GroupMessageHandler) buildReplyText(reply string) string {
 	// 1.获取@我的用户
 	atText := "@" + g.sender.NickName
-	textSplit := strings.Split(reply, "\n\n")
-	if len(textSplit) > 1 {
-		trimText := textSplit[0]
-		reply = strings.Trim(reply, trimText)
-	}
+	// textSplit := strings.Split(reply, "\n\n")
+	// if len(textSplit) > 1 {
+	// 	trimText := textSplit[0]
+	// 	reply = strings.Trim(reply, trimText)
+	// }
+
+	reply = strings.Trim(reply, "\n")
 	reply = strings.TrimSpace(reply)
 	if reply == "" {
 		return atText + " 请求得不到任何有意义的回复，请具体提出问题。"
 	}
 
 	// 2.拼接回复,@我的用户，问题，回复
-	replaceText := "@" + g.self.NickName
-	question := strings.TrimSpace(strings.ReplaceAll(g.msg.Content, replaceText, ""))
-	reply = atText + "\n" + question + "\n --------------------------------\n" + reply
-	reply = strings.Trim(reply, "\n")
+	// replaceText := "@" + g.self.NickName
+	// question := strings.TrimSpace(strings.ReplaceAll(g.msg.Content, replaceText, ""))
+	// reply = atText + "\n" + question + "\n --------------------------------\n" + reply
+	// reply = strings.Trim(reply, "\n")
+	reply = atText + reply
 
 	// 3.返回回复的内容
 	return reply

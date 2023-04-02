@@ -3,37 +3,35 @@ package gpt
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"github.com/qingconglaixueit/wechatbot/config"
-	"github.com/qingconglaixueit/wechatbot/pkg/logger"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/ylsislove/wechatbot/config"
+	"github.com/ylsislove/wechatbot/pkg/logger"
 )
 
-const BASEURL = "https://api.openai.com/v1/"
-
-// ChatGPTResponseBody 请求体
-type ChatGPTResponseBody struct {
+// GPTResponseBody 请求体
+type GPTResponseBody struct {
 	ID      string                 `json:"id"`
 	Object  string                 `json:"object"`
 	Created int                    `json:"created"`
 	Model   string                 `json:"model"`
-	Choices []ChoiceItem           `json:"choices"`
+	Choices []GPTChoiceItem        `json:"choices"`
 	Usage   map[string]interface{} `json:"usage"`
 }
 
-type ChoiceItem struct {
+type GPTChoiceItem struct {
 	Text         string `json:"text"`
 	Index        int    `json:"index"`
 	Logprobs     int    `json:"logprobs"`
 	FinishReason string `json:"finish_reason"`
 }
 
-// ChatGPTRequestBody 响应体
-type ChatGPTRequestBody struct {
+// GPTRequestBody 响应体
+type GPTRequestBody struct {
 	Model            string  `json:"model"`
 	Prompt           string  `json:"prompt"`
 	MaxTokens        uint    `json:"max_tokens"`
@@ -50,7 +48,7 @@ type ChatGPTRequestBody struct {
 //-d '{"model": "text-davinci-003", "prompt": "give me good song", "temperature": 0, "max_tokens": 7}'
 func Completions(msg string) (string, error) {
 	cfg := config.LoadConfig()
-	requestBody := ChatGPTRequestBody{
+	requestBody := GPTRequestBody{
 		Model:            cfg.Model,
 		Prompt:           msg,
 		MaxTokens:        cfg.MaxTokens,
@@ -65,7 +63,7 @@ func Completions(msg string) (string, error) {
 		return "", err
 	}
 	logger.Info(fmt.Sprintf("request gpt json string : %v", string(requestData)))
-	req, err := http.NewRequest("POST", BASEURL+"completions", bytes.NewBuffer(requestData))
+	req, err := http.NewRequest("POST", cfg.BaseUrl+"completions", bytes.NewBuffer(requestData))
 	if err != nil {
 		return "", err
 	}
@@ -73,7 +71,7 @@ func Completions(msg string) (string, error) {
 	apiKey := config.LoadConfig().ApiKey
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+apiKey)
-	client := &http.Client{Timeout: 30 * time.Second}
+	client := &http.Client{Timeout: cfg.RequestTimeout * time.Second}
 	response, err := client.Do(req)
 	if err != nil {
 		return "", err
@@ -81,7 +79,7 @@ func Completions(msg string) (string, error) {
 	defer response.Body.Close()
 	if response.StatusCode != 200 {
 		body, _ := ioutil.ReadAll(response.Body)
-		return "", errors.New(fmt.Sprintf("请求GTP出错了，gpt api status code not equals 200,code is %d ,details:  %v ", response.StatusCode, string(body)))
+		return "", fmt.Errorf("请求GTP出错了，gpt api status code not equals 200,code is %d ,details:  %v ", response.StatusCode, string(body))
 	}
 	body, err := ioutil.ReadAll(response.Body)
 	if err != nil {
@@ -89,7 +87,7 @@ func Completions(msg string) (string, error) {
 	}
 	logger.Info(fmt.Sprintf("response gpt json string : %v", string(body)))
 
-	gptResponseBody := &ChatGPTResponseBody{}
+	gptResponseBody := &GPTResponseBody{}
 	log.Println(string(body))
 	err = json.Unmarshal(body, gptResponseBody)
 	if err != nil {

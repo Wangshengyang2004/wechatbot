@@ -3,12 +3,13 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/qingconglaixueit/wechatbot/pkg/logger"
 	"log"
 	"os"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/ylsislove/wechatbot/pkg/logger"
 )
 
 // Configuration 项目配置
@@ -29,6 +30,10 @@ type Configuration struct {
 	ReplyPrefix string `json:"reply_prefix"`
 	// 清空会话口令
 	SessionClearToken string `json:"session_clear_token"`
+	//请求地址
+	BaseUrl string `json:"base_url"`
+	//请求地址
+	RequestTimeout time.Duration `json:"request_timeout"`
 }
 
 var config *Configuration
@@ -44,7 +49,10 @@ func LoadConfig() *Configuration {
 			MaxTokens:         512,
 			Model:             "text-davinci-003",
 			Temperature:       0.9,
+			ReplyPrefix:       "来自机器人回复：",
 			SessionClearToken: "下一个问题",
+			BaseUrl:           "https://api.openai.com/v1/",
+			RequestTimeout:    60,
 		}
 
 		// 判断配置文件是否存在，存在直接JSON读取
@@ -72,6 +80,8 @@ func LoadConfig() *Configuration {
 		Temperature := os.Getenv("TEMPREATURE")
 		ReplyPrefix := os.Getenv("REPLY_PREFIX")
 		SessionClearToken := os.Getenv("SESSION_CLEAR_TOKEN")
+		BaseUrl := os.Getenv("BASE_URL")
+		RequestTimeout := os.Getenv("REQUEST_TIMEOUT")
 		if ApiKey != "" {
 			config.ApiKey = ApiKey
 		}
@@ -111,7 +121,17 @@ func LoadConfig() *Configuration {
 		if SessionClearToken != "" {
 			config.SessionClearToken = SessionClearToken
 		}
-
+		if BaseUrl != "" {
+			config.BaseUrl = BaseUrl
+		}
+		if RequestTimeout != "" {
+			duration, err := time.ParseDuration(RequestTimeout)
+			if err != nil {
+				logger.Danger(fmt.Sprintf("config RequestTimeout err: %v ,get is %v", err, RequestTimeout))
+				return
+			}
+			config.RequestTimeout = duration
+		}
 	})
 	if config.ApiKey == "" {
 		logger.Danger("config err: api key required")

@@ -2,15 +2,16 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/qingconglaixueit/wechatbot/config"
-	"github.com/qingconglaixueit/wechatbot/pkg/logger"
-	"github.com/eatmoreapple/openwechat"
-	"github.com/patrickmn/go-cache"
-	"github.com/skip2/go-qrcode"
 	"log"
 	"runtime"
 	"strings"
 	"time"
+
+	"github.com/eatmoreapple/openwechat"
+	"github.com/patrickmn/go-cache"
+	"github.com/skip2/go-qrcode"
+	"github.com/ylsislove/wechatbot/config"
+	"github.com/ylsislove/wechatbot/pkg/logger"
 )
 
 var c = cache.New(config.LoadConfig().SessionTimeout, time.Minute*5)
@@ -45,7 +46,7 @@ func NewHandler() (msgFunc func(msg *openwechat.Message), err error) {
 
 	// 处理群消息
 	dispatcher.RegisterHandler(func(message *openwechat.Message) bool {
-		return message.IsSendByGroup()
+		return !(strings.Contains(message.Content, config.LoadConfig().SessionClearToken)) && message.IsSendByGroup()
 	}, GroupMessageContextHandler())
 
 	// 好友申请
@@ -54,7 +55,7 @@ func NewHandler() (msgFunc func(msg *openwechat.Message), err error) {
 	}, func(ctx *openwechat.MessageContext) {
 		msg := ctx.Message
 		if config.LoadConfig().AutoPass {
-			_, err := msg.Agree("")
+			_, err := msg.Agree("I am a writing and programming assistant.")
 			if err != nil {
 				logger.Warning(fmt.Sprintf("add friend agree error : %v", err))
 				return
@@ -67,5 +68,6 @@ func NewHandler() (msgFunc func(msg *openwechat.Message), err error) {
 	dispatcher.RegisterHandler(func(message *openwechat.Message) bool {
 		return !(strings.Contains(message.Content, config.LoadConfig().SessionClearToken) || message.IsSendByGroup() || message.IsFriendAdd())
 	}, UserMessageContextHandler())
-	return openwechat.DispatchMessage(dispatcher), nil
+
+	return dispatcher.AsMessageHandler(), nil
 }

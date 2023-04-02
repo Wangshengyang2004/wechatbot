@@ -158,9 +158,4 @@ session_clear_token: 会话清空口令，默认`下一个问题`
 # 使用示例
 ### 私聊
 
-<img width="300px" src="https://raw.githubusercontent.com/869413421/study/master/static/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20221208153022.jpg"/>
-
 ### 群聊@回复
-
-<img width="300px" src="https://raw.githubusercontent.com/869413421/study/master/static/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20221208153015.jpg"/>
-

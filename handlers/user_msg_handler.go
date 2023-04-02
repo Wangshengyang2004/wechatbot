@@ -1,14 +1,14 @@
 package handlers
 
 import (
-	"errors"
 	"fmt"
-	"github.com/eatmoreapple/openwechat"
-	"github.com/qingconglaixueit/wechatbot/config"
-	"github.com/qingconglaixueit/wechatbot/gpt"
-	"github.com/qingconglaixueit/wechatbot/pkg/logger"
-	"github.com/qingconglaixueit/wechatbot/service"
 	"strings"
+
+	"github.com/eatmoreapple/openwechat"
+	"github.com/ylsislove/wechatbot/config"
+	"github.com/ylsislove/wechatbot/gpt"
+	"github.com/ylsislove/wechatbot/pkg/logger"
+	"github.com/ylsislove/wechatbot/service"
 )
 
 var _ MessageHandlerInterface = (*UserMessageHandler)(nil)
@@ -77,14 +77,20 @@ func (h *UserMessageHandler) ReplyText() error {
 		return nil
 	}
 	logger.Info(fmt.Sprintf("h.sender.NickName == %+v", h.sender.NickName))
+
 	// 2.向GPT发起请求，如果回复文本等于空,不回复
-	reply, err = gpt.Completions(h.getRequestText())
+	if config.LoadConfig().Model == "gpt-3.5-turbo" || config.LoadConfig().Model == "gpt-3.5-turbo-0301" {
+		reply, err = gpt.ChatCompletions(requestText)
+	} else {
+		reply, err = gpt.Completions(requestText)
+	}
 	if err != nil {
-		// 2.1 将GPT请求失败信息输出给用户，省得整天来问又不知道日志在哪里。
-		errMsg := fmt.Sprintf("gpt request error: %v", err)
-		_, err = h.msg.ReplyText(errMsg)
+		// 2.1 将GPT请求失败信息输出给用户
+		// errMsg := fmt.Sprintf("gpt request error: %v", err)
+		// _, err = h.msg.ReplyText(errMsg)
+		_, err = h.msg.ReplyText("我的大脑被神秘力量攻击了＞﹏＜，请联系管理员进行修复")
 		if err != nil {
-			return errors.New(fmt.Sprintf("response user error: %v ", err))
+			return fmt.Errorf("response user error: %v ", err)
 		}
 		return err
 	}
@@ -93,33 +99,33 @@ func (h *UserMessageHandler) ReplyText() error {
 	h.service.SetUserSessionContext(requestText, reply)
 	_, err = h.msg.ReplyText(buildUserReply(reply))
 	if err != nil {
-		return errors.New(fmt.Sprintf("response user error: %v ", err))
+		return fmt.Errorf("response user error: %v ", err)
 	}
 
 	// 3.返回错误
 	return err
 }
 
-// getRequestText 获取请求接口的文本，要做一些清晰
+// getRequestText 获取请求接口的文本，要做一些清洗
 func (h *UserMessageHandler) getRequestText() string {
 	// 1.去除空格以及换行
 	requestText := strings.TrimSpace(h.msg.Content)
-	requestText = strings.Trim(h.msg.Content, "\n")
+	requestText = strings.Trim(requestText, "\n")
 
 	// 2.获取上下文，拼接在一起，如果字符长度超出4000，截取为4000。（GPT按字符长度算），达芬奇3最大为4068，也许后续为了适应要动态进行判断。
 	sessionText := h.service.GetUserSessionContext()
 	if sessionText != "" {
 		requestText = sessionText + "\n" + requestText
 	}
-	if len(requestText) >= 4000 {
-		requestText = requestText[:4000]
+	if len(requestText) >= int(config.LoadConfig().MaxTokens) {
+		requestText = requestText[:int(config.LoadConfig().MaxTokens)]
 	}
 
 	// 3.检查用户发送文本是否包含结束标点符号
 	punctuation := ",.;!?，。！？、…"
 	runeRequestText := []rune(requestText)
 	lastChar := string(runeRequestText[len(runeRequestText)-1:])
-	if strings.Index(punctuation, lastChar) < 0 {
+	if !strings.Contains(punctuation, lastChar) {
 		requestText = requestText + "？" // 判断最后字符是否加了标点，没有的话加上句号，避免openai自动补齐引起混乱。
 	}
 
@@ -130,13 +136,14 @@ func (h *UserMessageHandler) getRequestText() string {
 // buildUserReply 构建用户回复
 func buildUserReply(reply string) string {
 	// 1.去除空格问号以及换行号，如果为空，返回一个默认值提醒用户
-	textSplit := strings.Split(reply, "\n\n")
-	if len(textSplit) > 1 {
-		trimText := textSplit[0]
-		reply = strings.Trim(reply, trimText)
-	}
-	reply = strings.TrimSpace(reply)
+	// textSplit := strings.Split(reply, "\n\n")
+	// if len(textSplit) > 1 {
+	// 	trimText := textSplit[0]
+	// 	reply = strings.Trim(reply, trimText)
+	// }
+	// reply = strings.TrimSpace(reply)
 
+	reply = strings.Trim(reply, "\n")
 	reply = strings.TrimSpace(reply)
 	if reply == "" {
 		return "请求得不到任何有意义的回复，请具体提出问题。"
