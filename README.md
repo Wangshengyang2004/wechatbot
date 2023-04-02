@@ -15,9 +15,9 @@
 * 支持配置好友添加是否自动通过
 
 ## 效果展示
-![](https://image.aayu.today/uploads/2023/04/03/202304030216436.jpg)
-![](https://image.aayu.today/uploads/2023/04/03/202304030216410.jpg)
-![](https://image.aayu.today/uploads/2023/04/03/202304030216301.jpg)
+<img src="https://image.aayu.today/uploads/2023/04/03/202304030216436.jpg" height="400px">
+<img src="https://image.aayu.today/uploads/2023/04/03/202304030216410.jpg" height="400px">
+<img src="https://image.aayu.today/uploads/2023/04/03/202304030216301.jpg" height="400px">
 
 # 实现机制
 目前机器人有两种实现方式
