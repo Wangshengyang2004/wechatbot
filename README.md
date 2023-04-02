@@ -4,7 +4,7 @@
 > 最近ChatGPT异常火爆，本项目可以将个人微信化身GPT机器人，
 > 项目基于[openwechat](https://github.com/eatmoreapple/openwechat) 开发。
 
-### 目前实现了以下功能
+## 目前实现了以下功能
 
 * 默认使用`gpt-3.5-turbo`模型，可选配置`text-davinci-003`，gpt4还在捣鼓中，相信很快就会到来~
 * 支持缓存对话上下文，可配置缓存时间，默认缓存1分钟
@@ -13,6 +13,11 @@
 * 支持私聊回复
 * 支持私聊回复前缀设置
 * 支持配置好友添加是否自动通过
+
+## 效果展示
+![](https://image.aayu.today/uploads/2023/04/03/202304030216436.jpg)
+![](https://image.aayu.today/uploads/2023/04/03/202304030216410.jpg)
+![](https://image.aayu.today/uploads/2023/04/03/202304030216301.jpg)
 
 # 实现机制
 目前机器人有两种实现方式
