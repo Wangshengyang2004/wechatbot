@@ -87,6 +87,7 @@ func (h *UserMessageHandler) ReplyText() error {
 	if err != nil {
 		// 2.1 将GPT请求失败信息输出给用户
 		// errMsg := fmt.Sprintf("gpt request error: %v", err)
+		fmt.Printf("gtp request error: %v \n", err)
 		// _, err = h.msg.ReplyText(errMsg)
 		_, err = h.msg.ReplyText("我的大脑被神秘力量攻击了＞﹏＜，请联系管理员进行修复")
 		if err != nil {
