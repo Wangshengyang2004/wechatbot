@@ -7,6 +7,7 @@
 ## 目前实现了以下功能
 
 * 默认使用`gpt-3.5-turbo`模型，可选配置`text-davinci-003`，gpt4还在捣鼓中，相信很快就会到来~
+* 支持配置base_url和proxy，方便国内用户使用。二者配置其一即可，参数解释详见[配置文件说明](#配置文件说明)
 * 支持缓存对话上下文，可配置缓存时间，默认缓存1分钟
 * 支持通过指令清空上下文，可配置清空指令
 * 支持群聊@回复
@@ -137,7 +138,8 @@ $ go run main.go
   "reply_prefix": "来自机器人回复：",
   "session_clear_token": "清空会话",
   "base_url": "https://api.openai.com/v1/",
-  "request_timeout": 60
+  "request_timeout": 60,
+  "proxy": ""
 }
 ```
 
@@ -151,4 +153,4 @@ $ go run main.go
 * session_clear_token: 情况上下文的指令，默认`清空会话`
 * base_url：API请求地址，默认官网API地址，国内用户可设置为自己搭建的代理地址
 * request_timeout：请求超时时间，默认60秒
-
+* proxy: 代理地址，如果需要使用代理，可以在此配置代理地址。例如：`http://127.0.0.1:18081`
