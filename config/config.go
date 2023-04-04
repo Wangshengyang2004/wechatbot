@@ -32,8 +32,10 @@ type Configuration struct {
 	SessionClearToken string `json:"session_clear_token"`
 	//请求地址
 	BaseUrl string `json:"base_url"`
-	//请求地址
+	//请求超时时间
 	RequestTimeout time.Duration `json:"request_timeout"`
+	//代理地址
+	Proxy string `json:"proxy"`
 }
 
 var config *Configuration
@@ -82,6 +84,7 @@ func LoadConfig() *Configuration {
 		SessionClearToken := os.Getenv("SESSION_CLEAR_TOKEN")
 		BaseUrl := os.Getenv("BASE_URL")
 		RequestTimeout := os.Getenv("REQUEST_TIMEOUT")
+		Proxy := os.Getenv("PROXY")
 		if ApiKey != "" {
 			config.ApiKey = ApiKey
 		}
@@ -131,6 +134,9 @@ func LoadConfig() *Configuration {
 				return
 			}
 			config.RequestTimeout = duration
+		}
+		if Proxy != "" {
+			config.Proxy = Proxy
 		}
 	})
 	if config.ApiKey == "" {

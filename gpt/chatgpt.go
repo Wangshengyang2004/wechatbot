@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/ylsislove/wechatbot/config"
@@ -76,11 +77,26 @@ func ChatCompletions(msg string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	// fmt.Println(cfg.BaseUrl + "chat/completions")
 
 	apiKey := config.LoadConfig().ApiKey
+	proxy := config.LoadConfig().Proxy
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+apiKey)
-	client := &http.Client{Timeout: cfg.RequestTimeout * time.Second}
+	// client := &http.Client{Timeout: cfg.RequestTimeout * time.Second}
+
+	var client *http.Client
+	if len(proxy) == 0 {
+		client = &http.Client{Timeout: cfg.RequestTimeout * time.Second}
+	} else {
+		proxyAddr, _ := url.Parse(proxy)
+		client = &http.Client{
+			Transport: &http.Transport{
+				Proxy: http.ProxyURL(proxyAddr),
+			},
+			Timeout: cfg.RequestTimeout * time.Second,
+		}
+	}
 
 	response, err := client.Do(req)
 	if err != nil {
