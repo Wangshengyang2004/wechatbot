@@ -58,7 +58,7 @@ func ChatCompletions(msg string) (string, error) {
 	requestBody := ChatGPTRequestBody{
 		Model: cfg.Model,
 		Messages: []ChatGPTMessage{
-			{Role: "system", Content: "Serve me as a writing and programming assistant."},
+			{Role: "system", Content: "你是一个可以聊天，写作，编程的机器人，如果你收到了中文问题，请用中文回复；英文问题则用英文."},
 			{Role: "user", Content: msg},
 		},
 		MaxTokens:        cfg.MaxTokens,
